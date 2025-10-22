@@ -1,0 +1,15 @@
+---
+title: "Welcome to Yumeka Nagano’s Blog"
+---
+
+# Welcome 👋
+
+This is my personal blog about reinforcement learning and control.  
+
+Here are some posts you can read:
+
+- [Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning](sac.qmd)
+
+---
+
+I’ll be adding more posts soon!

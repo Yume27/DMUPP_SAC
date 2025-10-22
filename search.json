@@ -1,5 +1,12 @@
 [
   {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Welcome to Yumeka Nagano’s Blog",
+    "section": "",
+    "text": "Welcome 👋\nThis is my personal blog about reinforcement learning and control.\nHere are some posts you can read:\n\nUnderstanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning\n\n\nI’ll be adding more posts soon!"
+  },
+  {
     "objectID": "sac.html",
     "href": "sac.html",
     "title": "Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning",

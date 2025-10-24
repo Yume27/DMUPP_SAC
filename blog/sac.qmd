@@ -1,303 +1,340 @@
 ---
 title: "Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning"
 author: "Yumeka Nagano"
+
 format:
   html:
+    theme:
+        light: flatly
+        dark: darkly
     toc: true
-    # toc-location: left
     toc-depth: 3
     code-fold: true
-    theme: flatly
+
 jupyter: python3
 execute:
   echo: true
   eval: true
+
+bibliography: references.bib
 ---
 
-In this post, I explore the key ideas behind the Soft Actor-Critic algorithm — how it uses entropy regularization to achieve stable and efficient learning, and why its automatic temperature adjustment is a breakthrough in continuous control RL.
+In this post, I explore the key ideas behind the **Soft Actor-Critic** algorithm—how it leverages **entropy regularization** to achieve stable and efficient learning, and why its **automatic temperature adjustment** represents a breakthrough in continuous control reinforcement learning.
 
 ![](images/intro2.png){width=100%}
 
 # Introduction
 
-The **Soft Actor-Critic (SAC)** algorithm has become one of the most reliable and widely used methods in deep reinforcement learning (RL), especially for continuous control tasks.  
-At first glance, SAC may look similar to other actor-critic algorithms like DDPG or TD3—but its key innovation lies in how it **optimizes not just reward, but also entropy**.
+The **Soft Actor-Critic (SAC)** algorithm has become one of the most widely used methods in deep reinforcement learning (RL), especially for **continuous control tasks**.  
+At first glance, SAC may look similar to other actor-critic algorithms like DDPG [@lillicrapContinuousControlDeep2015] or TD3 [@pmlr-v80-fujimoto18a]—but its key innovation lies in how it **optimizes both reward and entropy**.
 
-In this post, we’ll explore the main ideas behind SAC as introduced in *Soft Actor-Critic Algorithms and Applications* (Haarnoja et al., 2018).  
-We’ll focus on two core features that make SAC both stable and efficient:
+This post explores the main ideas behind SAC as presented in *Soft Actor-Critic Algorithms and Applications* [@haarnojaSoftActorCriticAlgorithms2019], which builds upon the earlier work *Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement  Learning with a Stochastic Actor* [@haarnojaSoftActorCriticOffPolicy2018].  
+I focus on two core features that make SAC both stable and efficient:
 
-1. **Entropy-constrained learning:** SAC doesn’t just balance reward and entropy with a fixed coefficient—it enforces a target entropy constraint.  
-2. **Automatic temperature adjustment:** The temperature parameter α is learned, not manually tuned.
+1. **Entropy-regulated learning:** SAC doesn’t just balance reward and entropy with a fixed coefficient—it enforces a target entropy constraint.  
+2. **Automatic temperature adjustment:** The temperature parameter $\alpha$ is learned rather than manually tuned.
 
-By the end, we’ll see why this approach makes SAC more robust, sample-efficient, and less sensitive to hyperparameters than many prior methods.
+By the end of this post, we’ll see how these design choices make SAC more **robust**, **sample-efficient**, and **less sensitive to hyperparameters** than many of its predecessors.
 
 ---
 
-# Motivation: Beyond Deterministic Control
+# Background
 
-Traditional actor-critic algorithms (like DDPG) are **deterministic**: the policy outputs a specific action for each state.  
-This is efficient for exploitation, but risky for exploration—especially in continuous action spaces.
+RL has evolved through a series of key algorithmic advances in both on-policy and off-policy methods. Understanding these developments provides the foundation for why the SAC algorithm was introduced.
+
+### On-Policy Methods
+
+Early on-policy algorithms such as TRPO [@pmlr-v37-schulman15], PPO [@schulmanProximalPolicyOptimization2017c], and A3C [@pmlr-v48-mniha16] directly optimize policies using trajectories collected from the most recent policy. While effective, these approaches require fresh samples for every gradient step, which makes them sample-inefficient, particularly in continuous control tasks where data collection is expensive.
+
+### Deterministic Off-Policy Methods
+
+DDPG [@lillicrapContinuousControlDeep2015] improved sample efficiency by introducing deterministic actors and leveraging experience replay. However, DDPG is sensitive to hyperparameters and often unstable in high-dimensional or complex environments.
+
+TD3 [@pmlr-v80-fujimoto18a] addressed several of DDPG’s weaknesses by introducing three key modifications:
+
+- Twin critics to reduce overestimation bias
+- Delayed actor updates for smoother training
+- Target policy smoothing to improve stability
+
+These changes made TD3 more robust and reliable, yet it still relied on a deterministic actor, limiting its ability to explore effectively in challenging tasks.
+
+### Maximum Entropy and Stochastic Exploration
+
+The maximum entropy framework [@ziebart2008maximum] proposed augmenting the RL objective with an entropy term, encouraging agents to favor stochastic policies that promote exploration and robustness. 
+ 
+Building on this idea, Soft Q-Learning [@pmlr-v70-haarnoja17a] applied entropy maximization to continuous control tasks. However, it often struggled with stability because it did not explicitly integrate actor–critic training.
+
+Similarly, algorithms like PPO include an entropy bonus to encourage exploration, but the entropy weight is typically a fixed, manually tuned parameter, which limits adaptability.
+
+### Milestones in Continuous Control RL {#dqn-td3}
+
+Here’s a simplified timeline showing key advances leading up to SAC:
+
+![](/images/rl_timeline_improved.png){width=90%}
+
+<div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
+<a href="#dqn-td3" style="color: #1F78B4; font-weight: bold;">DQN</a> | <a href="#dqn-td3" style="color: #33A02C; font-weight: bold;">DDPG</a> | <a href="#dqn-td3" style="color: #FB9A99; font-weight: bold;">TD3</a> | <a href="#sac" style="color: #E31A1C; font-weight: bold;">SAC</a> | <a href="#cql_dreamer" style="color: #5AB4E4; font-weight: bold;">CQL/Dreamer</a>
+</div>
+
+- **DQN:** First deep RL with value-based learning for discrete actions.  
+- **DDPG:** Off-policy deterministic actor–critic for continuous control.  
+- **TD3:** Improved DDPG with twin critics and smoothing.  
+
+These developments set the stage for SAC, which unifies off-policy learning with stochastic exploration and adaptive entropy.
+
+::: {.callout-tip}
+## Why SAC?
+SAC unifies these ideas around entropy into a single, practical framework by:
+
+- Employing a stochastic actor to enhance exploration
+- Introducing a learnable temperature parameter to automatically balance reward and entropy
+- Explicitly modifying the value function to incorporate the entropy term
+
+These innovations make SAC both stable and sample-efficient, even in high-dimensional continuous control tasks, addressing limitations of previous methods.
+:::
+
+---
+
+# How SAC Works {#sac}
 
 Entropy-regularized reinforcement learning introduces a **stochastic policy** that maximizes not only expected reward but also **policy entropy**:
 
 $$
-J(\pi) = \mathbb{E}_{(s,a)\sim\rho_\pi} [r(s,a) + \alpha \mathcal{H}(\pi(\cdot|s))]
+J(\pi) = \sum_{t=0}^{T}\mathbb{E}_{(s_t,a_t)\sim\rho_\pi} [r(s_t,a_t) + \alpha \mathcal{H}(\pi(\cdot|s_t))]
 $$
 
 Here:
 
-- \( \mathcal{H}(\pi(\cdot|s)) = - \mathbb{E}_{a\sim\pi} [\log \pi(a|s)] \) measures how random the policy is.
-- \( \alpha \) controls the trade-off between reward and entropy.
+- $\mathcal{H}$ measures how random the policy is.
+- $\alpha$ controls the trade-off between reward and entropy.
 
-Higher entropy encourages exploration and smoother learning, but if \( \alpha \) is too high, the agent behaves almost randomly.  
-So, how do we pick α?
+With this objective, SAC consists of the following key components:
 
----
+1. **Actor network**: The decision-maker that outputs a distribution over actions, parameterized by its mean and standard deviation. This makes SAC a **stochastic actor**, unlike deterministic policies such as DDPG or TD3.
+2. **Critic networks**: Two critic networks independently estimate the action-value function. The minimum of their Q-values is used to update the policy, reducing overestimation bias (following the Double Q-learning idea [@NIPS2010_091d584f]).
+3. **Replay buffer**: Enables sample-efficient learning by reusing past transitions rather than collecting fresh samples every update.
+4. **Entropy regularization**: Encourages exploration by using the actor’s output to compute policy entropy $\mathcal{H}$, which directly influences the critic updates.
 
-# Key Structure
-![](images/structure.png){width=100%}
-
----
-
-# Fixed vs. Adaptive Temperature
-
-Early versions of entropy-regularized RL used a **fixed α**, chosen via hyperparameter tuning.  
-This is suboptimal for two reasons:
-
-1. The “right” level of entropy depends on the environment and the stage of learning.  
-2. A fixed α couples exploration strength directly to reward scaling.
-
-SAC resolves this beautifully by treating α as a **learnable parameter**.
+![](images/structure.png){width=90%}
 
 ---
 
 # Automatic Temperature Adjustment
 
-The SAC paper reframes α as a variable that enforces a **target entropy constraint**:
+Earlier entropy-regularized RL algorithms, including the original SAC paper [@haarnojaSoftActorCriticOffPolicy2018], used a fixed temperature parameter ($\alpha$) that had to be manually tuned to balance exploration and exploitation.
+However, this approach has two major drawbacks:
+
+1. The optimal entropy level depends on the task and stage of learning.  
+2. A fixed $\alpha$ ties exploration strength to reward scaling, making tuning difficult and inconsistent.
+
+SAC resolves this issue by treating $\alpha$ as a **learnable parameter**.
+It reframes the problem as enforcing a **target entropy constraint**, formulated as a constrained optimization problem:
 
 $$
-\mathcal{L}(\alpha) = \mathbb{E}_{a_t \sim \pi_t} [-\alpha (\log \pi_t(a_t|s_t) + \mathcal{H}_{\text{target}})]
+\max_{\pi_{0:T}} \mathbb{E}_{\rho_\pi} \left[ \sum_{t=0}^{T} r(s_t, a_t) \right]
+\quad \text{s.t.} \quad
+\mathbb{E}_{(s_t, a_t) \sim \rho_\pi} \big[ -\log(\pi_t(a_t \mid s_t)) \big] \ge \mathcal{H}, \ \forall t 
 $$
 
-This objective pushes α to increase if the policy entropy is below the target and decrease otherwise.
+This constrained maximization is converted to a dual problem, where the optimal dual variable $\alpha_t^*$ satisfies:
 
-In PyTorch, the update step looks like this:
+$$
+\alpha_t^* = \arg\min_{\alpha_t} \mathbb{E}_{a_t \sim \pi_t^*} 
+\left[ -\alpha_t \log \pi_t^*(a_t \mid s_t; \alpha_t) - \alpha_t \bar{\mathcal{H}} \right]
+$$
 
-```{python}
-import torch
+In practice, $\alpha$ is learned by minimizing the following objective:
 
-# Initialize log_alpha (so α = exp(log_alpha))
-log_alpha = torch.tensor(0.0, requires_grad=True)
-alpha_optimizer = torch.optim.Adam([log_alpha], lr=3e-4)
+$$
+J(\alpha) = \mathbb{E}_{a_t \sim \pi_t} 
+\left[ -\alpha \log \pi_t(a_t \mid s_t) - \alpha \bar{\mathcal{H}} \right]
+$$
 
-# Example of computing the temperature loss
-log_prob = torch.tensor([-1.2, -0.8, -1.5])  # log π(a|s) for some batch
-target_entropy = -1.0  # typical target for 1D continuous action
+This adaptive temperature learning, together with policy and soft Q-function updates, forms the core mechanism behind SAC’s stability and efficiency.
 
-alpha_loss = -(log_alpha * (log_prob + target_entropy).detach()).mean()
-alpha_optimizer.zero_grad()
-alpha_loss.backward()
-alpha_optimizer.step()
+Here's a pseudo code of SAC:
 
-alpha = log_alpha.exp().item()
-alpha
-```
+![](images/algorithm.png){width=90%}
 
-The optimizer adjusts log_alpha so that the expected policy entropy matches the desired target.
+*Image credit: Soft Actor-Critic Algorithms and Applications* [@haarnojaSoftActorCriticAlgorithms2019]
 
 ---
 
-# Why Entropy Constraint Matters
+# Results
 
-Instead of weighting reward and entropy with a fixed scalar α, SAC enforces:
+The algorithm was evaluated in both simulation and real-world robotic settings.
 
-$$
-\mathcal{H}(\pi(\cdot|s_t)) \approx \mathcal{H}_{\text{target}}
-$$
+### MuJoCo Simulation
 
-This dynamic adjustment stabilizes learning in several ways:
+This environment serves as a standard benchmark for continuous control tasks.  
+The following algorithms were used for comparison:
 
-- Prevents premature convergence (too little exploration).
-- Avoids oscillation or instability from excessive randomness.
-- Keeps policy behavior consistent across environments and reward scales.
+1. **DDPG** – One of the early efficient off-policy deep RL methods.  
+2. **TD3** – An extension of DDPG that applies the Double Q-learning idea to continuous control.  
+3. **PPO** – A stable and widely used on-policy policy gradient algorithm.
 
-Intuitively, it’s like giving the agent an adaptive curiosity level that balances exploration with exploitation automatically.
+The authors compared versions of SAC using both a fixed (manually tuned) and an automatically learned temperature parameter, $\alpha$.  
+Here are the learning curves across different environments. You can also find the corresponding <a href="#video" style="font-weight: bold;">videos</a> at the end of this article.
 
----
+![](images/mujoco.png)
+Training curves on benchmark tasks. Image credit: *Soft Actor-Critic Algorithms and Applications* [@haarnojaSoftActorCriticAlgorithms2019].
 
-# Entropy–Temperature Relationship
+These results show that SAC consistently performs as well as—or better than—the baselines.  
+It learns faster in terms of environment interaction steps and exhibits more stable convergence in most cases.
 
-The relationship between entropy and α can be visualized simply:
 
-```{python}
-import matplotlib.pyplot as plt
-import numpy as np
+### Real-world Robotics
 
-entropies = np.linspace(0.5, 2.0, 100)
-alphas = 1 / entropies
+The algorithm was also evaluated on challenging real-world robotic tasks: **quadrupedal locomotion** and **dexterous hand manipulation**.
 
-plt.plot(entropies, alphas)
-plt.xlabel("Entropy")
-plt.ylabel("Temperature α")
-plt.title("Entropy–Temperature Relationship in SAC")
-plt.grid(True)
-plt.show()
-```
+::: {layout="[1,1]"}
 
-When the policy’s entropy decreases (less randomness), α increases—pushing the policy to become more stochastic again.
-This feedback loop maintains a balanced level of exploration throughout training.
+![Locomotion](images/loco.png){width=94%}
+Locomotion (image credit: [Soft Actor-Critic](https://sites.google.com/view/sac-and-applications/home?authuser=0)).
 
----
+![Manipulation](images/mani.png){width=90%}
+Manipulation (image credit: [Soft Actor-Critic](https://sites.google.com/view/sac-and-applications/home?authuser=0))
 
-# The Soft Q-Function
+:::
 
-SAC also modifies the Bellman backup to incorporate entropy:
+SAC successfully learned both tasks.  
+A particularly remarkable finding is that the locomotion policy was trained only on flat terrain, yet it generalized to walking on slopes and steps.  
+Similarly, the manipulation policy learned faster than PPO and demonstrated strong sample efficiency.
 
-$$
-Q^{\pi}(s_t, a_t) = r(s_t, a_t) + \gamma \mathbb{E}{s{t+1}\sim p, a_{t+1}\sim\pi} [Q^{\pi}(s_{t+1}, a_{t+1}) - \alpha \log \pi(a_{t+1}|s_{t+1})]
-$$
 
-This soft Q-function estimates the expected return plus an entropy bonus.
-The inclusion of ( -\alpha \log \pi(a|s) ) encourages higher entropy where possible, while still optimizing reward.
+### Why It Works So Well?
+
+SAC’s success combines:
+
+1. Entropy regularization → better exploration  
+2. Off-policy updates → sample efficiency  
+3. Automatic temperature tuning → stable learning  
 
 ---
 
-# Policy Update
+# Impact and Legacy {#cql_dreamer}
 
-The policy update is also softened:
+The paper has been cited 4,018 times (as of October 23, 2025), and the original paper has 12,834 citations according to **Google Scholar**, underscoring SAC’s profound influence on reinforcement learning research.  
 
-$$
-\pi_{\text{new}} = \arg\min_\pi D_{\text{KL}}\left(
-\pi(\cdot|s_t) ;||;
-\frac{\exp(\frac{1}{\alpha} Q(s_t, \cdot))}{Z(s_t)}
-\right)
-$$
+SAC represents a turning point in modern RL. By combining **off-policy actor–critic methods** with **entropy-regularized objectives**, it set a new standard for **stable, efficient, and generalizable learning** in continuous control tasks.
 
-This means the optimal policy should be close to a Boltzmann distribution over actions:
+### Influence on Future Work
 
-$$
-\pi^(a|s) \propto \exp\left(\frac{1}{\alpha} Q^(s,a)\right)
-$$
+SAC inspired a wave of follow-up research:
 
-So α acts as a temperature:
-	•	High α → flatter distribution → more exploration
-	•	Low α → sharper distribution → more exploitation
+- **CQL (Conservative Q-Learning):** Builds on SAC’s stochastic actor–critic structure for offline RL.  
+- **Dreamer:** Incorporates model-based planning with entropy-regularized objectives.  
+- **Other entropy-regularized methods:** Many modern continuous control algorithms adopt SAC-style stochastic actors and adaptive entropy tuning as standard practice.
+
+By unifying **practical learning methods** with **principled exploration**, SAC continues to serve as a benchmark for evaluating new RL algorithms in robotics, control, and reinforcement learning research.
 
 ---
 
-# Full SAC Algorithm
+# SAC vs. PPO
 
-Here’s a simplified pseudo-code version of SAC:
+Here’s my recommendation for when to use SAC versus PPO.
 
-```
-Algorithm 1: Soft Actor-Critic (SAC)
-Initialize policy parameters θ, Q-function parameters φ₁, φ₂, temperature α
-repeat
-    Observe state s
-    Sample action a ~ π_θ(a|s)
-    Execute action a, observe reward r and next state s'
-    Store (s, a, r, s') in replay buffer D
-    Sample batch B = {(s, a, r, s')} from D
-    Update critics φ₁, φ₂ using Bellman backup:
-        y = r + γ * min_i Q_{φ_i}(s', a') - α * log π_θ(a'|s')
-    Update actor θ using:
-        ∇_θ J(θ) = ∇_θ [α * log π_θ(a|s) - Q_φ(s,a)]
-    Adjust temperature α:
-        ∇_α J(α) = -α * (log π_θ(a|s) + H_target)
-until convergence
-```
+::: {layout-ncol=2}
+### When to use SAC?
+- Data is limited.  
+- Task involves **continuous actions**.  
+
+### When to use PPO?
+- Task has **discrete** or low-dimensional actions. 
+- You prefer an easy-to-implement on-policy method.
+:::
+
+::: callout-important
+If you’re unsure which to choose — try both and compare!
+:::
 
 ---
 
-# Implementation Insights
+# Critiques
 
-The key insight in SAC is the interplay between three components:
-	•	The soft Q-function estimates value under entropy regularization.
-	•	The policy network seeks to minimize the expected α-weighted KL divergence.
-	•	The temperature α adapts automatically to maintain a fixed entropy target.
+Here are my personal reflections on the paper.
 
-Together, these make SAC:
-	•	Stable: fewer learning crashes compared to DDPG/TD3.
-	•	Efficient: reuses experience through an off-policy replay buffer.
-	•	Automatic: minimal hyperparameter tuning for entropy.
+::: callout-tip
+## Strengths
+- Elegant formulation combining entropy maximization with actor–critic learning.  
+- Concise and well-structured writing.  
+- Real-world experiments — most RL papers are limited to simulation, so building physical setups adds great credibility.  
+- Highly influential and extensible — inspired many later algorithms like CQL and Dreamer.
+:::
 
---- 
-
-# Practical Considerations
-	•	Target Entropy:
-Often set to ( \mathcal{H}_{\text{target}} = -\text{dim}(A) ), where A is the action space dimension.
-For a 1D action space, that’s −1.0; for 6D, −6.0.
-	•	Twin Q-Networks:
-SAC uses two critics (like TD3) to mitigate overestimation bias.
-	•	Reparameterization Trick:
-Actions are sampled as ( a = \mu(s) + \sigma(s)\epsilon, ; \epsilon \sim \mathcal{N}(0,1) ),
-allowing gradients to flow through stochastic actions.
-
----
-
-# Visualization Example: Entropy Change Over Training
-
-To get a sense of how α evolves, here’s a toy example simulating α adapting as entropy changes:
-
-```{python}
-import numpy as np
-import matplotlib.pyplot as plt
-
-steps = np.arange(200)
-target_entropy = -1.0
-log_alpha = 0.0
-alpha = np.exp(log_alpha)
-
-entropies = np.linspace(0.0, -2.0, len(steps))
-alphas = []
-
-for entropy in entropies:
-    alpha_loss = -(log_alpha * (entropy - target_entropy))
-    log_alpha -= 0.01 * alpha_loss  # gradient step
-    alpha = np.exp(log_alpha)
-    alphas.append(alpha)
-
-plt.plot(steps, alphas)
-plt.xlabel("Training Steps")
-plt.ylabel("Alpha Value")
-plt.title("Adaptive Temperature α Over Time")
-plt.grid(True)
-plt.show()
-```
-
-You’ll see α increase when entropy drops below the target and decrease when it’s too high — a perfect self-correcting mechanism.
-
----
-
-# Why It Works So Well
-
-SAC’s success stems from combining three major strengths:
-	1.	Entropy regularization improves exploration.
-	2.	Off-policy updates improve sample efficiency.
-	3.	Automatic temperature tuning stabilizes learning.
-
-This triad makes SAC remarkably robust and effective in diverse continuous control benchmarks like HalfCheetah, Hopper, and Walker2d.
+::: callout-warning
+## Limitations
+- Lacks intuitive figures or conceptual illustrations, making the algorithm harder to fully grasp.  
+- Omits computational cost details for MuJoCo simulations — other methods might be faster in wall-clock training time.  
+- Little discussion on humanoid task stability — especially regarding the automatically adjusted temperature version.  
+- Locomotion tasks involve hand-tuned penalties, which may reduce generality.  
+- Limited experimental diversity — most tests are MuJoCo simulations or a few specific real-world setups; the valve manipulation task seems unusual.  
+- Few ablations — effects of network architecture, replay buffer size, and entropy targets are not systematically analyzed.
+:::
 
 ---
 
 # Conclusion
 
-Soft Actor-Critic represents a fundamental shift in reinforcement learning design.
-By optimizing for expected reward under a constraint on entropy, SAC provides a principled, practical way to achieve stable and efficient learning.
+The **Soft Actor-Critic** algorithm represents a fundamental shift in reinforcement learning design.  
+By optimizing expected reward under an **entropy constraint**, SAC offers a principled and practical solution for achieving both stability and efficiency.
 
 Key takeaways:
-	•	SAC maximizes both reward and uncertainty.
-	•	The temperature α is learned, not tuned.
-	•	Entropy constraints make learning more adaptive and stable.
 
-If you’ve struggled with brittle RL agents that either overfit or fail to explore, SAC’s entropy-constrained formulation offers a robust, elegant solution.
+- SAC maximizes both **reward** and **uncertainty**.  
+- The temperature parameter **$\alpha$ is learned**, not manually tuned.  
+- Entropy constraints make learning **more adaptive and stable**.
+
+If you’ve ever struggled with brittle RL agents that overfit or fail to explore, SAC’s entropy-constrained framework provides a robust, elegant solution.
 
 ---
 
-# References
-	•	Haarnoja, T., Zhou, A., Abbeel, P., & Levine, S. (2018).
-Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor.
-[Paper]
-	•	Haarnoja, T., et al. (2019).
-Soft Actor-Critic Algorithms and Applications.
-[Paper]
+# Videos {#video}
+
+These videos demonstrate SAC’s performance in MuJoCo simulations (from the original paper) and in real-world robotic environments (image/video credit: [Soft Actor-Critic](https://sites.google.com/view/soft-actor-critic)).
+
+::: {.panel-tabset}
+
+## Hopper
+
+<video width="640" height="360" controls>
+  <source src="videos/0-3.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+## Walker 2D
+
+<video width="640" height="360" controls>
+  <source src="videos/0-6.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+## Half Cheetah
+
+<video width="640" height="360" controls>
+  <source src="videos/0-2.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+## Ant
+
+<video width="640" height="360" controls>
+  <source src="videos/0.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+## Humanoid
+
+<video width="640" height="360" controls>
+  <source src="videos/0-4.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+## Humanoid (rllab)
+
+<video width="640" height="360" controls>
+  <source src="videos/0-5.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+---

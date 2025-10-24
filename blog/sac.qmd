@@ -1,5 +1,5 @@
 ---
-title: "Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning"
+title: "Mastering Soft Actor-Critic: How Entropy Unlocks Stable Reinforcement Learning"
 author: "Yumeka Nagano"
 
 format:

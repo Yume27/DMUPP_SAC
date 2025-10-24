@@ -8,7 +8,7 @@
 
 <meta name="author" content="Yumeka Nagano">
 
-<title>Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning – Yumeka Nagano</title>
+<title>Understanding Soft Actor-Critic: Entropy-Constrained Reinforcement Learning</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -21,42 +21,27 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
 }
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
 }
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
 }
-</style>
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
@@ -73,10 +58,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-707d8167ce6003fca903bfe2be84ab7f.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-f93c2b1f3f0577f377aefa4848a86a36.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-f93c2b1f3f0577f377aefa4848a86a36.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-0d4a9d19931feb4fee1ddab4b2489000.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-f93c2b1f3f0577f377aefa4848a86a36.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -137,7 +126,169 @@ window.Quarto = {
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -145,9 +296,6 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="./index.html" class="navbar-brand navbar-brand-logo">
-    </a>
-    <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">Yumeka Nagano</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -157,16 +305,13 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
     <a class="nav-link active" href="./sac.html" aria-current="page"> 
-<span class="menu-text">Posts</span></a>
+<span class="menu-text">Soft Actor-Critic</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -181,26 +326,35 @@ window.Quarto = {
    
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#motivation-beyond-deterministic-control" id="toc-motivation-beyond-deterministic-control" class="nav-link" data-scroll-target="#motivation-beyond-deterministic-control">Motivation: Beyond Deterministic Control</a></li>
-  <li><a href="#key-structure" id="toc-key-structure" class="nav-link" data-scroll-target="#key-structure">Key Structure</a></li>
-  <li><a href="#fixed-vs.-adaptive-temperature" id="toc-fixed-vs.-adaptive-temperature" class="nav-link" data-scroll-target="#fixed-vs.-adaptive-temperature">Fixed vs.&nbsp;Adaptive Temperature</a></li>
+  <li><a href="#background" id="toc-background" class="nav-link" data-scroll-target="#background">Background</a>
+  <ul class="collapse">
+  <li><a href="#on-policy-methods" id="toc-on-policy-methods" class="nav-link" data-scroll-target="#on-policy-methods">On-Policy Methods</a></li>
+  <li><a href="#deterministic-off-policy-methods" id="toc-deterministic-off-policy-methods" class="nav-link" data-scroll-target="#deterministic-off-policy-methods">Deterministic Off-Policy Methods</a></li>
+  <li><a href="#maximum-entropy-and-stochastic-exploration" id="toc-maximum-entropy-and-stochastic-exploration" class="nav-link" data-scroll-target="#maximum-entropy-and-stochastic-exploration">Maximum Entropy and Stochastic Exploration</a></li>
+  <li><a href="#dqn-td3" id="toc-dqn-td3" class="nav-link" data-scroll-target="#dqn-td3">Milestones in Continuous Control RL</a></li>
+  </ul></li>
+  <li><a href="#sac" id="toc-sac" class="nav-link" data-scroll-target="#sac">How SAC Works</a></li>
   <li><a href="#automatic-temperature-adjustment" id="toc-automatic-temperature-adjustment" class="nav-link" data-scroll-target="#automatic-temperature-adjustment">Automatic Temperature Adjustment</a></li>
-  <li><a href="#why-entropy-constraint-matters" id="toc-why-entropy-constraint-matters" class="nav-link" data-scroll-target="#why-entropy-constraint-matters">Why Entropy Constraint Matters</a></li>
-  <li><a href="#entropytemperature-relationship" id="toc-entropytemperature-relationship" class="nav-link" data-scroll-target="#entropytemperature-relationship">Entropy–Temperature Relationship</a></li>
-  <li><a href="#the-soft-q-function" id="toc-the-soft-q-function" class="nav-link" data-scroll-target="#the-soft-q-function">The Soft Q-Function</a></li>
-  <li><a href="#policy-update" id="toc-policy-update" class="nav-link" data-scroll-target="#policy-update">Policy Update</a></li>
-  <li><a href="#full-sac-algorithm" id="toc-full-sac-algorithm" class="nav-link" data-scroll-target="#full-sac-algorithm">Full SAC Algorithm</a></li>
-  <li><a href="#implementation-insights" id="toc-implementation-insights" class="nav-link" data-scroll-target="#implementation-insights">Implementation Insights</a></li>
-  <li><a href="#practical-considerations" id="toc-practical-considerations" class="nav-link" data-scroll-target="#practical-considerations">Practical Considerations</a></li>
-  <li><a href="#visualization-example-entropy-change-over-training" id="toc-visualization-example-entropy-change-over-training" class="nav-link" data-scroll-target="#visualization-example-entropy-change-over-training">Visualization Example: Entropy Change Over Training</a></li>
-  <li><a href="#why-it-works-so-well" id="toc-why-it-works-so-well" class="nav-link" data-scroll-target="#why-it-works-so-well">Why It Works So Well</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#mujoco-simulation" id="toc-mujoco-simulation" class="nav-link" data-scroll-target="#mujoco-simulation">MuJoCo Simulation</a></li>
+  <li><a href="#real-world-robotics" id="toc-real-world-robotics" class="nav-link" data-scroll-target="#real-world-robotics">Real-world Robotics</a></li>
+  <li><a href="#why-it-works-so-well" id="toc-why-it-works-so-well" class="nav-link" data-scroll-target="#why-it-works-so-well">Why It Works So Well?</a></li>
+  </ul></li>
+  <li><a href="#cql_dreamer" id="toc-cql_dreamer" class="nav-link" data-scroll-target="#cql_dreamer">Impact and Legacy</a>
+  <ul class="collapse">
+  <li><a href="#influence-on-future-work" id="toc-influence-on-future-work" class="nav-link" data-scroll-target="#influence-on-future-work">Influence on Future Work</a></li>
+  </ul></li>
+  <li><a href="#sac-vs.-ppo" id="toc-sac-vs.-ppo" class="nav-link" data-scroll-target="#sac-vs.-ppo">SAC vs.&nbsp;PPO</a></li>
+  <li><a href="#critiques" id="toc-critiques" class="nav-link" data-scroll-target="#critiques">Critiques</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#video" id="toc-video" class="nav-link" data-scroll-target="#video">Videos</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
+
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -227,259 +381,396 @@ window.Quarto = {
 </header>
 
 
-<p>In this post, I explore the key ideas behind the Soft Actor-Critic algorithm — how it uses entropy regularization to achieve stable and efficient learning, and why its automatic temperature adjustment is a breakthrough in continuous control RL.</p>
+<p>In this post, I explore the key ideas behind the <strong>Soft Actor-Critic</strong> algorithm—how it leverages <strong>entropy regularization</strong> to achieve stable and efficient learning, and why its <strong>automatic temperature adjustment</strong> represents a breakthrough in continuous control reinforcement learning.</p>
 <p><img src="images/intro2.png" class="img-fluid" style="width:100.0%"></p>
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>The <strong>Soft Actor-Critic (SAC)</strong> algorithm has become one of the most reliable and widely used methods in deep reinforcement learning (RL), especially for continuous control tasks.<br>
-At first glance, SAC may look similar to other actor-critic algorithms like DDPG or TD3—but its key innovation lies in how it <strong>optimizes not just reward, but also entropy</strong>.</p>
-<p>In this post, we’ll explore the main ideas behind SAC as introduced in <em>Soft Actor-Critic Algorithms and Applications</em> (Haarnoja et al., 2018).<br>
-We’ll focus on two core features that make SAC both stable and efficient:</p>
+<p>The <strong>Soft Actor-Critic (SAC)</strong> algorithm has become one of the most widely used methods in deep reinforcement learning (RL), especially for <strong>continuous control tasks</strong>.<br>
+At first glance, SAC may look similar to other actor-critic algorithms like DDPG <span class="citation" data-cites="lillicrapContinuousControlDeep2015">(<a href="#ref-lillicrapContinuousControlDeep2015" role="doc-biblioref">Lillicrap et al. 2015</a>)</span> or TD3 <span class="citation" data-cites="pmlr-v80-fujimoto18a">(<a href="#ref-pmlr-v80-fujimoto18a" role="doc-biblioref">Fujimoto, Hoof, and Meger 2018</a>)</span>—but its key innovation lies in how it <strong>optimizes both reward and entropy</strong>.</p>
+<p>This post explores the main ideas behind SAC as presented in <em>Soft Actor-Critic Algorithms and Applications</em> <span class="citation" data-cites="haarnojaSoftActorCriticAlgorithms2019">(<a href="#ref-haarnojaSoftActorCriticAlgorithms2019" role="doc-biblioref">Haarnoja et al. 2019</a>)</span>, which builds upon the earlier work <em>Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</em> <span class="citation" data-cites="haarnojaSoftActorCriticOffPolicy2018">(<a href="#ref-haarnojaSoftActorCriticOffPolicy2018" role="doc-biblioref">Haarnoja et al. 2018</a>)</span>.<br>
+I focus on two core features that make SAC both stable and efficient:</p>
 <ol type="1">
-<li><strong>Entropy-constrained learning:</strong> SAC doesn’t just balance reward and entropy with a fixed coefficient—it enforces a target entropy constraint.<br>
+<li><strong>Entropy-regulated learning:</strong> SAC doesn’t just balance reward and entropy with a fixed coefficient—it enforces a target entropy constraint.<br>
 </li>
-<li><strong>Automatic temperature adjustment:</strong> The temperature parameter α is learned, not manually tuned.</li>
+<li><strong>Automatic temperature adjustment:</strong> The temperature parameter <span class="math inline">\(\alpha\)</span> is learned rather than manually tuned.</li>
 </ol>
-<p>By the end, we’ll see why this approach makes SAC more robust, sample-efficient, and less sensitive to hyperparameters than many prior methods.</p>
+<p>By the end of this post, we’ll see how these design choices make SAC more <strong>robust</strong>, <strong>sample-efficient</strong>, and <strong>less sensitive to hyperparameters</strong> than many of its predecessors.</p>
 <hr>
 </section>
-<section id="motivation-beyond-deterministic-control" class="level1">
-<h1>Motivation: Beyond Deterministic Control</h1>
-<p>Traditional actor-critic algorithms (like DDPG) are <strong>deterministic</strong>: the policy outputs a specific action for each state.<br>
-This is efficient for exploitation, but risky for exploration—especially in continuous action spaces.</p>
+<section id="background" class="level1">
+<h1>Background</h1>
+<p>RL has evolved through a series of key algorithmic advances in both on-policy and off-policy methods. Understanding these developments provides the foundation for why the SAC algorithm was introduced.</p>
+<section id="on-policy-methods" class="level3">
+<h3 class="anchored" data-anchor-id="on-policy-methods">On-Policy Methods</h3>
+<p>Early on-policy algorithms such as TRPO <span class="citation" data-cites="pmlr-v37-schulman15">(<a href="#ref-pmlr-v37-schulman15" role="doc-biblioref">Schulman et al. 2015</a>)</span>, PPO <span class="citation" data-cites="schulmanProximalPolicyOptimization2017c">(<a href="#ref-schulmanProximalPolicyOptimization2017c" role="doc-biblioref">Schulman et al. 2017</a>)</span>, and A3C <span class="citation" data-cites="pmlr-v48-mniha16">(<a href="#ref-pmlr-v48-mniha16" role="doc-biblioref">Mnih et al. 2016</a>)</span> directly optimize policies using trajectories collected from the most recent policy. While effective, these approaches require fresh samples for every gradient step, which makes them sample-inefficient, particularly in continuous control tasks where data collection is expensive.</p>
+</section>
+<section id="deterministic-off-policy-methods" class="level3">
+<h3 class="anchored" data-anchor-id="deterministic-off-policy-methods">Deterministic Off-Policy Methods</h3>
+<p>DDPG <span class="citation" data-cites="lillicrapContinuousControlDeep2015">(<a href="#ref-lillicrapContinuousControlDeep2015" role="doc-biblioref">Lillicrap et al. 2015</a>)</span> improved sample efficiency by introducing deterministic actors and leveraging experience replay. However, DDPG is sensitive to hyperparameters and often unstable in high-dimensional or complex environments.</p>
+<p>TD3 <span class="citation" data-cites="pmlr-v80-fujimoto18a">(<a href="#ref-pmlr-v80-fujimoto18a" role="doc-biblioref">Fujimoto, Hoof, and Meger 2018</a>)</span> addressed several of DDPG’s weaknesses by introducing three key modifications:</p>
+<ul>
+<li>Twin critics to reduce overestimation bias</li>
+<li>Delayed actor updates for smoother training</li>
+<li>Target policy smoothing to improve stability</li>
+</ul>
+<p>These changes made TD3 more robust and reliable, yet it still relied on a deterministic actor, limiting its ability to explore effectively in challenging tasks.</p>
+</section>
+<section id="maximum-entropy-and-stochastic-exploration" class="level3">
+<h3 class="anchored" data-anchor-id="maximum-entropy-and-stochastic-exploration">Maximum Entropy and Stochastic Exploration</h3>
+<p>The maximum entropy framework <span class="citation" data-cites="ziebart2008maximum">(<a href="#ref-ziebart2008maximum" role="doc-biblioref">Ziebart et al. 2008</a>)</span> proposed augmenting the RL objective with an entropy term, encouraging agents to favor stochastic policies that promote exploration and robustness.</p>
+<p>Building on this idea, Soft Q-Learning <span class="citation" data-cites="pmlr-v70-haarnoja17a">(<a href="#ref-pmlr-v70-haarnoja17a" role="doc-biblioref">Haarnoja et al. 2017</a>)</span> applied entropy maximization to continuous control tasks. However, it often struggled with stability because it did not explicitly integrate actor–critic training.</p>
+<p>Similarly, algorithms like PPO include an entropy bonus to encourage exploration, but the entropy weight is typically a fixed, manually tuned parameter, which limits adaptability.</p>
+</section>
+<section id="dqn-td3" class="level3">
+<h3 class="anchored" data-anchor-id="dqn-td3">Milestones in Continuous Control RL</h3>
+<p>Here’s a simplified timeline showing key advances leading up to SAC:</p>
+<p><img src="./images/rl_timeline_improved.png" class="img-fluid" style="width:90.0%"></p>
+<div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
+<p><a href="#dqn-td3" style="color: #1F78B4; font-weight: bold;">DQN</a> | <a href="#dqn-td3" style="color: #33A02C; font-weight: bold;">DDPG</a> | <a href="#dqn-td3" style="color: #FB9A99; font-weight: bold;">TD3</a> | <a href="#sac" style="color: #E31A1C; font-weight: bold;">SAC</a> | <a href="#cql_dreamer" style="color: #5AB4E4; font-weight: bold;">CQL/Dreamer</a></p>
+</div>
+<ul>
+<li><strong>DQN:</strong> First deep RL with value-based learning for discrete actions.<br>
+</li>
+<li><strong>DDPG:</strong> Off-policy deterministic actor–critic for continuous control.<br>
+</li>
+<li><strong>TD3:</strong> Improved DDPG with twin critics and smoothing.</li>
+</ul>
+<p>These developments set the stage for SAC, which unifies off-policy learning with stochastic exploration and adaptive entropy.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why SAC?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>SAC unifies these ideas around entropy into a single, practical framework by:</p>
+<ul>
+<li>Employing a stochastic actor to enhance exploration</li>
+<li>Introducing a learnable temperature parameter to automatically balance reward and entropy</li>
+<li>Explicitly modifying the value function to incorporate the entropy term</li>
+</ul>
+<p>These innovations make SAC both stable and sample-efficient, even in high-dimensional continuous control tasks, addressing limitations of previous methods.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="sac" class="level1">
+<h1>How SAC Works</h1>
 <p>Entropy-regularized reinforcement learning introduces a <strong>stochastic policy</strong> that maximizes not only expected reward but also <strong>policy entropy</strong>:</p>
 <p><span class="math display">\[
-J(\pi) = \mathbb{E}_{(s,a)\sim\rho_\pi} [r(s,a) + \alpha \mathcal{H}(\pi(\cdot|s))]
+J(\pi) = \sum_{t=0}^{T}\mathbb{E}_{(s_t,a_t)\sim\rho_\pi} [r(s_t,a_t) + \alpha \mathcal{H}(\pi(\cdot|s_t))]
 \]</span></p>
 <p>Here:</p>
 <ul>
-<li>( ((|s)) = - _{a} [(a|s)] ) measures how random the policy is.</li>
-<li>( ) controls the trade-off between reward and entropy.</li>
+<li><span class="math inline">\(\mathcal{H}\)</span> measures how random the policy is.</li>
+<li><span class="math inline">\(\alpha\)</span> controls the trade-off between reward and entropy.</li>
 </ul>
-<p>Higher entropy encourages exploration and smoother learning, but if ( ) is too high, the agent behaves almost randomly.<br>
-So, how do we pick α?</p>
-<hr>
-</section>
-<section id="key-structure" class="level1">
-<h1>Key Structure</h1>
-<p><img src="images/structure.png" class="img-fluid" style="width:100.0%"></p>
-<hr>
-</section>
-<section id="fixed-vs.-adaptive-temperature" class="level1">
-<h1>Fixed vs.&nbsp;Adaptive Temperature</h1>
-<p>Early versions of entropy-regularized RL used a <strong>fixed α</strong>, chosen via hyperparameter tuning.<br>
-This is suboptimal for two reasons:</p>
+<p>With this objective, SAC consists of the following key components:</p>
 <ol type="1">
-<li>The “right” level of entropy depends on the environment and the stage of learning.<br>
-</li>
-<li>A fixed α couples exploration strength directly to reward scaling.</li>
+<li><strong>Actor network</strong>: The decision-maker that outputs a distribution over actions, parameterized by its mean and standard deviation. This makes SAC a <strong>stochastic actor</strong>, unlike deterministic policies such as DDPG or TD3.</li>
+<li><strong>Critic networks</strong>: Two critic networks independently estimate the action-value function. The minimum of their Q-values is used to update the policy, reducing overestimation bias (following the Double Q-learning idea <span class="citation" data-cites="NIPS2010_091d584f">(<a href="#ref-NIPS2010_091d584f" role="doc-biblioref">Hasselt 2010</a>)</span>).</li>
+<li><strong>Replay buffer</strong>: Enables sample-efficient learning by reusing past transitions rather than collecting fresh samples every update.</li>
+<li><strong>Entropy regularization</strong>: Encourages exploration by using the actor’s output to compute policy entropy <span class="math inline">\(\mathcal{H}\)</span>, which directly influences the critic updates.</li>
 </ol>
-<p>SAC resolves this beautifully by treating α as a <strong>learnable parameter</strong>.</p>
+<p><img src="images/structure.png" class="img-fluid" style="width:90.0%"></p>
 <hr>
 </section>
 <section id="automatic-temperature-adjustment" class="level1">
 <h1>Automatic Temperature Adjustment</h1>
-<p>The SAC paper reframes α as a variable that enforces a <strong>target entropy constraint</strong>:</p>
+<p>Earlier entropy-regularized RL algorithms, including the original SAC paper <span class="citation" data-cites="haarnojaSoftActorCriticOffPolicy2018">(<a href="#ref-haarnojaSoftActorCriticOffPolicy2018" role="doc-biblioref">Haarnoja et al. 2018</a>)</span>, used a fixed temperature parameter (<span class="math inline">\(\alpha\)</span>) that had to be manually tuned to balance exploration and exploitation. However, this approach has two major drawbacks:</p>
+<ol type="1">
+<li>The optimal entropy level depends on the task and stage of learning.<br>
+</li>
+<li>A fixed <span class="math inline">\(\alpha\)</span> ties exploration strength to reward scaling, making tuning difficult and inconsistent.</li>
+</ol>
+<p>SAC resolves this issue by treating <span class="math inline">\(\alpha\)</span> as a <strong>learnable parameter</strong>. It reframes the problem as enforcing a <strong>target entropy constraint</strong>, formulated as a constrained optimization problem:</p>
 <p><span class="math display">\[
-\mathcal{L}(\alpha) = \mathbb{E}_{a_t \sim \pi_t} [-\alpha (\log \pi_t(a_t|s_t) + \mathcal{H}_{\text{target}})]
+\max_{\pi_{0:T}} \mathbb{E}_{\rho_\pi} \left[ \sum_{t=0}^{T} r(s_t, a_t) \right]
+\quad \text{s.t.} \quad
+\mathbb{E}_{(s_t, a_t) \sim \rho_\pi} \big[ -\log(\pi_t(a_t \mid s_t)) \big] \ge \mathcal{H}, \ \forall t
 \]</span></p>
-<p>This objective pushes α to increase if the policy entropy is below the target and decrease otherwise.</p>
-<p>In PyTorch, the update step looks like this:</p>
-<div id="5fdeda70" class="cell" data-execution_count="1">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize log_alpha (so α = exp(log_alpha))</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>log_alpha <span class="op">=</span> torch.tensor(<span class="fl">0.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>alpha_optimizer <span class="op">=</span> torch.optim.Adam([log_alpha], lr<span class="op">=</span><span class="fl">3e-4</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Example of computing the temperature loss</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>log_prob <span class="op">=</span> torch.tensor([<span class="op">-</span><span class="fl">1.2</span>, <span class="op">-</span><span class="fl">0.8</span>, <span class="op">-</span><span class="fl">1.5</span>])  <span class="co"># log π(a|s) for some batch</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>target_entropy <span class="op">=</span> <span class="op">-</span><span class="fl">1.0</span>  <span class="co"># typical target for 1D continuous action</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>alpha_loss <span class="op">=</span> <span class="op">-</span>(log_alpha <span class="op">*</span> (log_prob <span class="op">+</span> target_entropy).detach()).mean()</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>alpha_optimizer.zero_grad()</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>alpha_loss.backward()</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>alpha_optimizer.step()</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> log_alpha.exp().item()</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>alpha</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="4">
-<pre><code>0.9997000694274902</code></pre>
-</div>
-</div>
-<p>The optimizer adjusts log_alpha so that the expected policy entropy matches the desired target.</p>
+<p>This constrained maximization is converted to a dual problem, where the optimal dual variable <span class="math inline">\(\alpha_t^*\)</span> satisfies:</p>
+<p><span class="math display">\[
+\alpha_t^* = \arg\min_{\alpha_t} \mathbb{E}_{a_t \sim \pi_t^*}
+\left[ -\alpha_t \log \pi_t^*(a_t \mid s_t; \alpha_t) - \alpha_t \bar{\mathcal{H}} \right]
+\]</span></p>
+<p>In practice, <span class="math inline">\(\alpha\)</span> is learned by minimizing the following objective:</p>
+<p><span class="math display">\[
+J(\alpha) = \mathbb{E}_{a_t \sim \pi_t}
+\left[ -\alpha \log \pi_t(a_t \mid s_t) - \alpha \bar{\mathcal{H}} \right]
+\]</span></p>
+<p>This adaptive temperature learning, together with policy and soft Q-function updates, forms the core mechanism behind SAC’s stability and efficiency.</p>
+<p>Here’s a pseudo code of SAC:</p>
+<p><img src="images/algorithm.png" class="img-fluid" style="width:90.0%"></p>
+<p><em>Image credit: Soft Actor-Critic Algorithms and Applications</em> <span class="citation" data-cites="haarnojaSoftActorCriticAlgorithms2019">(<a href="#ref-haarnojaSoftActorCriticAlgorithms2019" role="doc-biblioref">Haarnoja et al. 2019</a>)</span></p>
 <hr>
 </section>
-<section id="why-entropy-constraint-matters" class="level1">
-<h1>Why Entropy Constraint Matters</h1>
-<p>Instead of weighting reward and entropy with a fixed scalar α, SAC enforces:</p>
-<p><span class="math display">\[
-\mathcal{H}(\pi(\cdot|s_t)) \approx \mathcal{H}_{\text{target}}
-\]</span></p>
-<p>This dynamic adjustment stabilizes learning in several ways:</p>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>The algorithm was evaluated in both simulation and real-world robotic settings.</p>
+<section id="mujoco-simulation" class="level3">
+<h3 class="anchored" data-anchor-id="mujoco-simulation">MuJoCo Simulation</h3>
+<p>This environment serves as a standard benchmark for continuous control tasks.<br>
+The following algorithms were used for comparison:</p>
+<ol type="1">
+<li><strong>DDPG</strong> – One of the early efficient off-policy deep RL methods.<br>
+</li>
+<li><strong>TD3</strong> – An extension of DDPG that applies the Double Q-learning idea to continuous control.<br>
+</li>
+<li><strong>PPO</strong> – A stable and widely used on-policy policy gradient algorithm.</li>
+</ol>
+<p>The authors compared versions of SAC using both a fixed (manually tuned) and an automatically learned temperature parameter, <span class="math inline">\(\alpha\)</span>.<br>
+Here are the learning curves across different environments. You can also find the corresponding <a href="#video" style="font-weight: bold;">videos</a> at the end of this article.</p>
+<p><img src="images/mujoco.png" class="img-fluid"> Training curves on benchmark tasks. Image credit: <em>Soft Actor-Critic Algorithms and Applications</em> <span class="citation" data-cites="haarnojaSoftActorCriticAlgorithms2019">(<a href="#ref-haarnojaSoftActorCriticAlgorithms2019" role="doc-biblioref">Haarnoja et al. 2019</a>)</span>.</p>
+<p>These results show that SAC consistently performs as well as—or better than—the baselines.<br>
+It learns faster in terms of environment interaction steps and exhibits more stable convergence in most cases.</p>
+</section>
+<section id="real-world-robotics" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-robotics">Real-world Robotics</h3>
+<p>The algorithm was also evaluated on challenging real-world robotic tasks: <strong>quadrupedal locomotion</strong> and <strong>dexterous hand manipulation</strong>.</p>
+<div class="quarto-layout-panel" data-layout="[1,1]">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<p><img src="images/loco.png" class="img-fluid" style="width:94.0%" alt="Locomotion"> Locomotion (image credit: <a href="https://sites.google.com/view/sac-and-applications/home?authuser=0">Soft Actor-Critic</a>).</p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<p><img src="images/mani.png" class="img-fluid" style="width:90.0%" alt="Manipulation"> Manipulation (image credit: <a href="https://sites.google.com/view/sac-and-applications/home?authuser=0">Soft Actor-Critic</a>)</p>
+</div>
+</div>
+</div>
+<p>SAC successfully learned both tasks.<br>
+A particularly remarkable finding is that the locomotion policy was trained only on flat terrain, yet it generalized to walking on slopes and steps.<br>
+Similarly, the manipulation policy learned faster than PPO and demonstrated strong sample efficiency.</p>
+</section>
+<section id="why-it-works-so-well" class="level3">
+<h3 class="anchored" data-anchor-id="why-it-works-so-well">Why It Works So Well?</h3>
+<p>SAC’s success combines:</p>
+<ol type="1">
+<li>Entropy regularization → better exploration<br>
+</li>
+<li>Off-policy updates → sample efficiency<br>
+</li>
+<li>Automatic temperature tuning → stable learning</li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="cql_dreamer" class="level1">
+<h1>Impact and Legacy</h1>
+<p>The paper has been cited 4,018 times (as of October 23, 2025), and the original paper has 12,834 citations according to <strong>Google Scholar</strong>, underscoring SAC’s profound influence on reinforcement learning research.</p>
+<p>SAC represents a turning point in modern RL. By combining <strong>off-policy actor–critic methods</strong> with <strong>entropy-regularized objectives</strong>, it set a new standard for <strong>stable, efficient, and generalizable learning</strong> in continuous control tasks.</p>
+<section id="influence-on-future-work" class="level3">
+<h3 class="anchored" data-anchor-id="influence-on-future-work">Influence on Future Work</h3>
+<p>SAC inspired a wave of follow-up research:</p>
 <ul>
-<li>Prevents premature convergence (too little exploration).</li>
-<li>Avoids oscillation or instability from excessive randomness.</li>
-<li>Keeps policy behavior consistent across environments and reward scales.</li>
+<li><strong>CQL (Conservative Q-Learning):</strong> Builds on SAC’s stochastic actor–critic structure for offline RL.<br>
+</li>
+<li><strong>Dreamer:</strong> Incorporates model-based planning with entropy-regularized objectives.<br>
+</li>
+<li><strong>Other entropy-regularized methods:</strong> Many modern continuous control algorithms adopt SAC-style stochastic actors and adaptive entropy tuning as standard practice.</li>
 </ul>
-<p>Intuitively, it’s like giving the agent an adaptive curiosity level that balances exploration with exploitation automatically.</p>
+<p>By unifying <strong>practical learning methods</strong> with <strong>principled exploration</strong>, SAC continues to serve as a benchmark for evaluating new RL algorithms in robotics, control, and reinforcement learning research.</p>
 <hr>
 </section>
-<section id="entropytemperature-relationship" class="level1">
-<h1>Entropy–Temperature Relationship</h1>
-<p>The relationship between entropy and α can be visualized simply:</p>
-<div id="fae63f3f" class="cell" data-execution_count="2">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>entropies <span class="op">=</span> np.linspace(<span class="fl">0.5</span>, <span class="fl">2.0</span>, <span class="dv">100</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>alphas <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> entropies</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>plt.plot(entropies, alphas)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Entropy"</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Temperature α"</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Entropy–Temperature Relationship in SAC"</span>)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>)</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="sac_files/figure-html/cell-3-output-1.png" width="589" height="449" class="figure-img"></p>
-</figure>
+</section>
+<section id="sac-vs.-ppo" class="level1">
+<h1>SAC vs.&nbsp;PPO</h1>
+<p>Here’s my recommendation for when to use SAC versus PPO.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<section id="when-to-use-sac" class="level3 quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<h3 class="anchored" data-anchor-id="when-to-use-sac">When to use SAC?</h3>
+<ul>
+<li>Data is limited.<br>
+</li>
+<li>Task involves <strong>continuous actions</strong>.</li>
+</ul>
+</section>
+<section id="when-to-use-ppo" class="level3 quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<h3 class="anchored" data-anchor-id="when-to-use-ppo">When to use PPO?</h3>
+<ul>
+<li>Task has <strong>discrete</strong> or low-dimensional actions.</li>
+<li>You prefer an easy-to-implement on-policy method.</li>
+</ul>
+</section>
 </div>
 </div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p>When the policy’s entropy decreases (less randomness), α increases—pushing the policy to become more stochastic again. This feedback loop maintains a balanced level of exploration throughout training.</p>
-<hr>
-</section>
-<section id="the-soft-q-function" class="level1">
-<h1>The Soft Q-Function</h1>
-<p>SAC also modifies the Bellman backup to incorporate entropy:</p>
-<p><span class="math display">\[
-Q^{\pi}(s_t, a_t) = r(s_t, a_t) + \gamma \mathbb{E}{s{t+1}\sim p, a_{t+1}\sim\pi} [Q^{\pi}(s_{t+1}, a_{t+1}) - \alpha \log \pi(a_{t+1}|s_{t+1})]
-\]</span></p>
-<p>This soft Q-function estimates the expected return plus an entropy bonus. The inclusion of ( -(a|s) ) encourages higher entropy where possible, while still optimizing reward.</p>
-<hr>
-</section>
-<section id="policy-update" class="level1">
-<h1>Policy Update</h1>
-<p>The policy update is also softened:</p>
-<p><span class="math display">\[
-\pi_{\text{new}} = \arg\min_\pi D_{\text{KL}}\left(
-\pi(\cdot|s_t) ;||;
-\frac{\exp(\frac{1}{\alpha} Q(s_t, \cdot))}{Z(s_t)}
-\right)
-\]</span></p>
-<p>This means the optimal policy should be close to a Boltzmann distribution over actions:</p>
-<p><span class="math display">\[
-\pi^(a|s) \propto \exp\left(\frac{1}{\alpha} Q^(s,a)\right)
-\]</span></p>
-<p>So α acts as a temperature: • High α → flatter distribution → more exploration • Low α → sharper distribution → more exploitation</p>
-<hr>
-</section>
-<section id="full-sac-algorithm" class="level1">
-<h1>Full SAC Algorithm</h1>
-<p>Here’s a simplified pseudo-code version of SAC:</p>
-<pre><code>Algorithm 1: Soft Actor-Critic (SAC)
-Initialize policy parameters θ, Q-function parameters φ₁, φ₂, temperature α
-repeat
-    Observe state s
-    Sample action a ~ π_θ(a|s)
-    Execute action a, observe reward r and next state s'
-    Store (s, a, r, s') in replay buffer D
-    Sample batch B = {(s, a, r, s')} from D
-    Update critics φ₁, φ₂ using Bellman backup:
-        y = r + γ * min_i Q_{φ_i}(s', a') - α * log π_θ(a'|s')
-    Update actor θ using:
-        ∇_θ J(θ) = ∇_θ [α * log π_θ(a|s) - Q_φ(s,a)]
-    Adjust temperature α:
-        ∇_α J(α) = -α * (log π_θ(a|s) + H_target)
-until convergence</code></pre>
-<hr>
-</section>
-<section id="implementation-insights" class="level1">
-<h1>Implementation Insights</h1>
-<p>The key insight in SAC is the interplay between three components: • The soft Q-function estimates value under entropy regularization. • The policy network seeks to minimize the expected α-weighted KL divergence. • The temperature α adapts automatically to maintain a fixed entropy target.</p>
-<p>Together, these make SAC: • Stable: fewer learning crashes compared to DDPG/TD3. • Efficient: reuses experience through an off-policy replay buffer. • Automatic: minimal hyperparameter tuning for entropy.</p>
-<hr>
-</section>
-<section id="practical-considerations" class="level1">
-<h1>Practical Considerations</h1>
-<pre><code>•   Target Entropy:</code></pre>
-<p>Often set to ( _{} = -(A) ), where A is the action space dimension. For a 1D action space, that’s −1.0; for 6D, −6.0. • Twin Q-Networks: SAC uses two critics (like TD3) to mitigate overestimation bias. • Reparameterization Trick: Actions are sampled as ( a = (s) + (s), ; (0,1) ), allowing gradients to flow through stochastic actions.</p>
-<hr>
-</section>
-<section id="visualization-example-entropy-change-over-training" class="level1">
-<h1>Visualization Example: Entropy Change Over Training</h1>
-<p>To get a sense of how α evolves, here’s a toy example simulating α adapting as entropy changes:</p>
-<div id="5ee82abd" class="cell" data-execution_count="3">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>steps <span class="op">=</span> np.arange(<span class="dv">200</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>target_entropy <span class="op">=</span> <span class="op">-</span><span class="fl">1.0</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>log_alpha <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> np.exp(log_alpha)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>entropies <span class="op">=</span> np.linspace(<span class="fl">0.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="bu">len</span>(steps))</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>alphas <span class="op">=</span> []</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> entropy <span class="kw">in</span> entropies:</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    alpha_loss <span class="op">=</span> <span class="op">-</span>(log_alpha <span class="op">*</span> (entropy <span class="op">-</span> target_entropy))</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    log_alpha <span class="op">-=</span> <span class="fl">0.01</span> <span class="op">*</span> alpha_loss  <span class="co"># gradient step</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    alpha <span class="op">=</span> np.exp(log_alpha)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    alphas.append(alpha)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.plot(steps, alphas)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Training Steps"</span>)</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Alpha Value"</span>)</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Adaptive Temperature α Over Time"</span>)</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>)</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="sac_files/figure-html/cell-4-output-1.png" width="597" height="449" class="figure-img"></p>
-</figure>
+<div class="callout-title-container flex-fill">
+Important
 </div>
 </div>
+<div class="callout-body-container callout-body">
+<p>If you’re unsure which to choose — try both and compare!</p>
 </div>
-<p>You’ll see α increase when entropy drops below the target and decrease when it’s too high — a perfect self-correcting mechanism.</p>
+</div>
 <hr>
 </section>
-<section id="why-it-works-so-well" class="level1">
-<h1>Why It Works So Well</h1>
-<p>SAC’s success stems from combining three major strengths: 1. Entropy regularization improves exploration. 2. Off-policy updates improve sample efficiency. 3. Automatic temperature tuning stabilizes learning.</p>
-<p>This triad makes SAC remarkably robust and effective in diverse continuous control benchmarks like HalfCheetah, Hopper, and Walker2d.</p>
+<section id="critiques" class="level1">
+<h1>Critiques</h1>
+<p>Here are my personal reflections on the paper.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Strengths
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Elegant formulation combining entropy maximization with actor–critic learning.<br>
+</li>
+<li>Concise and well-structured writing.<br>
+</li>
+<li>Real-world experiments — most RL papers are limited to simulation, so building physical setups adds great credibility.<br>
+</li>
+<li>Highly influential and extensible — inspired many later algorithms like CQL and Dreamer.</li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Limitations
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Lacks intuitive figures or conceptual illustrations, making the algorithm harder to fully grasp.<br>
+</li>
+<li>Omits computational cost details for MuJoCo simulations — other methods might be faster in wall-clock training time.<br>
+</li>
+<li>Little discussion on humanoid task stability — especially regarding the automatically adjusted temperature version.<br>
+</li>
+<li>Locomotion tasks involve hand-tuned penalties, which may reduce generality.<br>
+</li>
+<li>Limited experimental diversity — most tests are MuJoCo simulations or a few specific real-world setups; the valve manipulation task seems unusual.<br>
+</li>
+<li>Few ablations — effects of network architecture, replay buffer size, and entropy targets are not systematically analyzed.</li>
+</ul>
+</div>
+</div>
 <hr>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
-<p>Soft Actor-Critic represents a fundamental shift in reinforcement learning design. By optimizing for expected reward under a constraint on entropy, SAC provides a principled, practical way to achieve stable and efficient learning.</p>
-<p>Key takeaways: • SAC maximizes both reward and uncertainty. • The temperature α is learned, not tuned. • Entropy constraints make learning more adaptive and stable.</p>
-<p>If you’ve struggled with brittle RL agents that either overfit or fail to explore, SAC’s entropy-constrained formulation offers a robust, elegant solution.</p>
+<p>The <strong>Soft Actor-Critic</strong> algorithm represents a fundamental shift in reinforcement learning design.<br>
+By optimizing expected reward under an <strong>entropy constraint</strong>, SAC offers a principled and practical solution for achieving both stability and efficiency.</p>
+<p>Key takeaways:</p>
+<ul>
+<li>SAC maximizes both <strong>reward</strong> and <strong>uncertainty</strong>.<br>
+</li>
+<li>The temperature parameter <strong><span class="math inline">\(\alpha\)</span> is learned</strong>, not manually tuned.<br>
+</li>
+<li>Entropy constraints make learning <strong>more adaptive and stable</strong>.</li>
+</ul>
+<p>If you’ve ever struggled with brittle RL agents that overfit or fail to explore, SAC’s entropy-constrained framework provides a robust, elegant solution.</p>
 <hr>
 </section>
-<section id="references" class="level1">
-<h1>References</h1>
-<pre><code>•   Haarnoja, T., Zhou, A., Abbeel, P., &amp; Levine, S. (2018).</code></pre>
-<p>Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor. [Paper] • Haarnoja, T., et al.&nbsp;(2019). Soft Actor-Critic Algorithms and Applications. [Paper]</p>
+<section id="video" class="level1">
+<h1>Videos</h1>
+<p>These videos demonstrate SAC’s performance in MuJoCo simulations (from the original paper) and in real-world robotic environments (image/video credit: <a href="https://sites.google.com/view/soft-actor-critic">Soft Actor-Critic</a>).</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Hopper</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Walker 2D</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Half Cheetah</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Ant</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">Humanoid</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-6" role="tab" aria-controls="tabset-1-6" aria-selected="false" href="">Humanoid (rllab)</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0-3.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+</video></div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0-6.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+</video></div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0-2.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+</video></div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+</video></div>
+<div id="tabset-1-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-5-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0-4.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+</video></div>
+<div id="tabset-1-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-6-tab">
+<video width="640" height="360" controls="">
+<source src="videos/0-5.mp4" type="video/mp4">
+<p>Your browser does not support the video tag. </p>
+<hr>
 
+
+</video></div>
+</div>
+</div>
 
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-pmlr-v80-fujimoto18a" class="csl-entry" role="listitem">
+Fujimoto, Scott, Herke van Hoof, and David Meger. 2018. <span>“Addressing Function Approximation Error in Actor-Critic Methods.”</span> In <em>Proceedings of the 35th International Conference on Machine Learning</em>, edited by Jennifer Dy and Andreas Krause, 80:1587–96. Proceedings of Machine Learning Research. PMLR. <a href="https://proceedings.mlr.press/v80/fujimoto18a.html">https://proceedings.mlr.press/v80/fujimoto18a.html</a>.
+</div>
+<div id="ref-pmlr-v70-haarnoja17a" class="csl-entry" role="listitem">
+Haarnoja, Tuomas, Haoran Tang, Pieter Abbeel, and Sergey Levine. 2017. <span>“Reinforcement Learning with Deep Energy-Based Policies.”</span> In <em>Proceedings of the 34th International Conference on Machine Learning</em>, edited by Doina Precup and Yee Whye Teh, 70:1352–61. Proceedings of Machine Learning Research. PMLR. <a href="https://proceedings.mlr.press/v70/haarnoja17a.html">https://proceedings.mlr.press/v70/haarnoja17a.html</a>.
+</div>
+<div id="ref-haarnojaSoftActorCriticOffPolicy2018" class="csl-entry" role="listitem">
+Haarnoja, Tuomas, Aurick Zhou, Pieter Abbeel, and Sergey Levine. 2018. <span>“Soft <span>Actor-Critic</span>: <span>Off-Policy Maximum Entropy Deep Reinforcement Learning</span> with a <span>Stochastic Actor</span>.”</span> August 8, 2018. <a href="https://doi.org/10.48550/arXiv.1801.01290">https://doi.org/10.48550/arXiv.1801.01290</a>.
+</div>
+<div id="ref-haarnojaSoftActorCriticAlgorithms2019" class="csl-entry" role="listitem">
+Haarnoja, Tuomas, Aurick Zhou, Kristian Hartikainen, George Tucker, Sehoon Ha, Jie Tan, Vikash Kumar, et al. 2019. <span>“Soft <span>Actor-Critic Algorithms</span> and <span>Applications</span>.”</span> January 29, 2019. <a href="https://doi.org/10.48550/arXiv.1812.05905">https://doi.org/10.48550/arXiv.1812.05905</a>.
+</div>
+<div id="ref-NIPS2010_091d584f" class="csl-entry" role="listitem">
+Hasselt, Hado. 2010. <span>“Double q-Learning.”</span> In <em>Advances in Neural Information Processing Systems</em>, edited by J. Lafferty, C. Williams, J. Shawe-Taylor, R. Zemel, and A. Culotta. Vol. 23. Curran Associates, Inc. <a href="https://proceedings.neurips.cc/paper_files/paper/2010/file/091d584fced301b442654dd8c23b3fc9-Paper.pdf">https://proceedings.neurips.cc/paper_files/paper/2010/file/091d584fced301b442654dd8c23b3fc9-Paper.pdf</a>.
+</div>
+<div id="ref-lillicrapContinuousControlDeep2015" class="csl-entry" role="listitem">
+Lillicrap, Timothy P., Jonathan J. Hunt, Alexander Pritzel, Nicolas Heess, Tom Erez, Yuval Tassa, David Silver, and Daan Wierstra. 2015. <span>“Continuous Control with Deep Reinforcement Learning.”</span> 2015. <a href="https://doi.org/10.48550/ARXIV.1509.02971">https://doi.org/10.48550/ARXIV.1509.02971</a>.
+</div>
+<div id="ref-pmlr-v48-mniha16" class="csl-entry" role="listitem">
+Mnih, Volodymyr, Adria Puigdomenech Badia, Mehdi Mirza, Alex Graves, Timothy Lillicrap, Tim Harley, David Silver, and Koray Kavukcuoglu. 2016. <span>“Asynchronous Methods for Deep Reinforcement Learning.”</span> In <em>Proceedings of the 33rd International Conference on Machine Learning</em>, edited by Maria Florina Balcan and Kilian Q. Weinberger, 48:1928–37. Proceedings of Machine Learning Research. New York, New York, USA: PMLR. <a href="https://proceedings.mlr.press/v48/mniha16.html">https://proceedings.mlr.press/v48/mniha16.html</a>.
+</div>
+<div id="ref-pmlr-v37-schulman15" class="csl-entry" role="listitem">
+Schulman, John, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. 2015. <span>“Trust Region Policy Optimization.”</span> In <em>Proceedings of the 32nd International Conference on Machine Learning</em>, edited by Francis Bach and David Blei, 37:1889–97. Proceedings of Machine Learning Research. Lille, France: PMLR. <a href="https://proceedings.mlr.press/v37/schulman15.html">https://proceedings.mlr.press/v37/schulman15.html</a>.
+</div>
+<div id="ref-schulmanProximalPolicyOptimization2017c" class="csl-entry" role="listitem">
+Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. 2017. <span>“Proximal <span>Policy Optimization Algorithms</span>.”</span> 2017. <a href="https://doi.org/10.48550/ARXIV.1707.06347">https://doi.org/10.48550/ARXIV.1707.06347</a>.
+</div>
+<div id="ref-ziebart2008maximum" class="csl-entry" role="listitem">
+Ziebart, Brian D, Andrew L Maas, J Andrew Bagnell, Anind K Dey, et al. 2008. <span>“Maximum Entropy Inverse Reinforcement Learning.”</span> In <em>Aaai</em>, 8:1433–38. Chicago, IL, USA.
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
     const icon = "";
     const anchorJS = new window.AnchorJS();
     anchorJS.options = {
@@ -551,7 +842,7 @@ until convergence</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/Yume27\.github\.io\/DMUPP_SAC\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

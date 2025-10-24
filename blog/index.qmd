@@ -1,4 +1,4 @@
----
+<!-- ---
 title: "Welcome to Yumeka Nagano’s Blog"
 ---
 
@@ -12,4 +12,12 @@ Here are some posts you can read:
 
 ---
 
-I’ll be adding more posts soon!
+I’ll be adding more posts soon! -->
+
+---
+title: "Redirecting"
+format: html
+---
+
+<meta http-equiv="refresh" content="0; url=sac.html">
+If you are not redirected automatically, <a href="sac.html">click here</a>.
